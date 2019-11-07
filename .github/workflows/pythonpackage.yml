@@ -19,7 +19,7 @@ jobs:
     - name: Create bitstreams
       run: |
         sudo apt install -y libmpfr-dev libmpc-dev
-        conda create -n ci python
+        conda create -n ci python=3.7
         source $CONDA/bin/activate
         conda activate ci
         pip install -r deps/garnet/requirements.txt
