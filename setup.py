@@ -8,7 +8,7 @@ setup(
     python_requires='>=3.7',
     install_requires = [
         "astor",
-        "cocotb @ git+ssh://github.com/thofstee/cocotb.git@timescale#egg=cocotb",
+        "cocotb @ git://github.com/thofstee/cocotb.git@timescale#egg=cocotb",
         "genesis2",
         "numpy",
         "pycoreir",
