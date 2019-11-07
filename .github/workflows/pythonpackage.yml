@@ -19,6 +19,8 @@ jobs:
     - name: Create bitstreams
       run: |
         conda create -n ci python
+        conda init bash
+        source ~/.bashrc
         conda activate ci
         pip install -r deps/garnet/requirements.txt
         pip install deps/*.whl
