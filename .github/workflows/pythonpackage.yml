@@ -6,9 +6,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    container:
-      image: docker://keyiz/garnet-flow
-
+    
     strategy:
       max-parallel: 4
 
@@ -22,13 +20,12 @@ jobs:
       run: |
         pip install -r deps/garnet/requirements.txt
         pip install deps/*.whl
-        pip install genesis2
+        pip install -e .
     - name: Create bitstream
       run: |
         python generate-bitstreams.py
     - name: Report application utilization
       run: |
-        apt install bsdmainutils
         cat apps/utilization.csv | column -t -s ',' -n
     - name: Upload artifact
       uses: actions/upload-artifact@master
