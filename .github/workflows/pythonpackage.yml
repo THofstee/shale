@@ -27,10 +27,12 @@ jobs:
         pip install -r deps/garnet/requirements.txt
         pip install deps/*.whl
         pip install -e .
+      shell: bash -l {0}
     - name: Create bitstream
       run: |
         conda activate ci
         python generate-bitstreams.py
+      shell: bash -l {0}
     - name: Report application utilization
       run: |
         cat apps/utilization.csv | column -t -s ',' -n
