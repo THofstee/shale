@@ -24,6 +24,7 @@ jobs:
         conda activate ci
         pip install -r deps/garnet/requirements.txt
         pip install deps/*.whl
+        pip uninstall coreir
         pip install -e .
         python generate-bitstreams.py
     - name: Report application utilization
