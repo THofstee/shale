@@ -18,8 +18,8 @@ jobs:
         git submodule update
     - name: Create bitstreams
       run: |
+        sudo apt install libmpfr-dev
         conda create -n ci python
-        echo $CONDA
         source $CONDA/bin/activate
         conda activate ci
         pip install -r deps/garnet/requirements.txt
