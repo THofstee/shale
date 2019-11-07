@@ -16,13 +16,14 @@ jobs:
       run: |
         git submodule init
         git submodule update
-    - name: python3.7
+    - name: python3
       run: |
         curl https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh > /tmp/miniconda.sh
         bash /tmp/miniconda.sh -b -p $HOME/miniconda
         export PATH="$HOME/miniconda/bin:$PATH"
         source $HOME/miniconda/bin/activate
         conda create -n ci python
+        conda activate ci
     - name: Install dependencies
       run: |
         pip install -r deps/garnet/requirements.txt
