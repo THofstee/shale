@@ -203,6 +203,8 @@ def generate_bitstreams():
 
 def generate_testbenches(apps):
     for app in apps:
+        os.makedirs(f"{args.app_root}/{app}/test", exist_ok=True)
+        
         subprocess.run(
             [
                 "python",
