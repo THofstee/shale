@@ -43,7 +43,7 @@ def generate_bitstreams(args):
             w.writeheader()
 
             # If there are apps within a folder, grab the apps that are inside that folder
-            for entry in gather_apps("apps"):
+            for entry in args.apps:
                 name = entry.parts[-1]
 
                 if should_run_app(entry, args):

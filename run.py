@@ -211,6 +211,8 @@ def generate_testbenches(apps):
 
 
 if args.garnet_flow:
+    raise NotImplementedError("Needs to be refactored.")
+
     # We need a different version of Garnet than TBG, so we'll just
     # generate our own.
     generate_garnet()
