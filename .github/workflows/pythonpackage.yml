@@ -30,7 +30,7 @@ jobs:
         tar -xf coreir-${OS_NAME}.tar.gz -C coreir_release --strip-components 1;
         cd coreir_release && sudo make install && cd ..
         pip install -e .
-        python run.py --width 32 --height 16
+        python run.py --debug --width 32 --height 16
     - name: Report application utilization
       run: |
         cat apps/utilization.csv | column -t -s ',' -n
