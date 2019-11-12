@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from util.apps import gather_apps
+from util.generate_bitstreams import generate_bitstreams as gen_bitstreams
 
 parser = argparse.ArgumentParser()
 parser.add_argument("apps", nargs="*")
@@ -58,7 +59,7 @@ def generate_garnet():
     )
 
     if p.returncode:
-        print(f"WARN: Couldn't fetch latest updates.", file=sys.stderr)
+        logging.warn("Couldn't fetch latest updates.")
         up_to_date = True
     else:
         up_to_date = git_up_to_date.search(p.stdout)
@@ -182,30 +183,12 @@ def generate_bitstreams():
     )
 
     if p.returncode:
-        print(f"WARN: Couldn't fetch latest updates.", file=sys.stderr)
-        up_to_date = True
+        logging.warn("Couldn't fetch latest updates.")
     else:
-        up_to_date = git_up_to_date.search(p.stdout)
+        if not git_up_to_date.search(p.stdout):
+            args.force = True
 
-    if args.force:
-        up_to_date = False
-
-    gen_bitstream_args = [
-        "--width", f"{args.width}",
-        "--height", f"{args.height}",
-        *args.apps,
-    ]
-
-    if not up_to_date:
-        gen_bitstream_args.append("--force")
-
-    subprocess.run(
-        [
-            "python",
-            "generate-bitstreams.py",
-            *gen_bitstream_args,
-        ],
-    )
+    gen_bitstreams(args)
 
 def generate_testbenches(apps):
     for app in apps:
@@ -241,20 +224,7 @@ if args.garnet_flow:
     generate_makefile()
 
     # Create bitstream
-    gen_bitstream_args = [
-        "--width", f"{args.width}",
-        "--height", f"{args.height}",
-        *args.apps,
-        "--garnet-flow",
-    ]
-
-    subprocess.run(
-        [
-            "python",
-            "generate-bitstreams.py",
-            *gen_bitstream_args,
-        ],
-    )
+    gen_bitstreams(args)
 
     # Run testbenches
     for app in args.apps:
