@@ -1,12 +1,10 @@
-# make SIM=vcs COMPILE_ARGS="-LDFLAGS -Wl,--no-as-needed"
-# LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 make SIM=ius
-
 import argparse
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+from util.apps import gather_apps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("apps", nargs="*")
@@ -25,9 +23,7 @@ cwd = os.getcwd()
 git_up_to_date = re.compile(r"Already up-to-date.")
 
 if len(args.apps) == 0:
-    for entry in os.scandir(f"{args.app_root}"):
-        if entry.is_dir():
-            args.apps.append(entry.name)
+    args.apps = gather_apps(args.app_root)
 
 def generate_garnet():
     subprocess.run(
@@ -274,10 +270,10 @@ if args.garnet_flow:
             os.symlink(f"{cwd}/extras/Makefile", f"{args.app_root}/{app}/test/Makefile")
 
         # Run top-level testbench
-        subprocess.run(
+        p = subprocess.run(
             [
                 "make",
-                "SIM=ius",
+                "SIM=vcs",
             ],
             cwd=f"{args.app_root}/{app}/test",
         )
