@@ -132,9 +132,9 @@ def process_inst(inst):
 
 app_name = args.app.rsplit("/", 1)[-1]
 
-with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
+with open(f"{args.app}/bin/global_buffer.json", "r") as f:
     js = json.load(f)
-    with open(f"{args.app_root}/{args.app}/map.json", "r") as f2:
+    with open(f"{args.app}/map.json", "r") as f2:
         mapping = json.load(f2)
 
     print(mapping['inputs'])
@@ -220,7 +220,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
             decorator_list=[]
         )
 
-    placement = parse_placement(f"{args.app_root}/{args.app}/bin/design.place")
+    placement = parse_placement(f"{args.app}/bin/design.place")
 
     def name_to_tile(name):
         x, y = placement[0][placement[1][name]]
@@ -258,6 +258,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
                 getattr(dut, port) <= 0
 
             dut.reset = 1
+            dut.TB_monitor_power = 0
             cocotb.fork(Clock(dut.clk, CLK_PERIOD, 'ps').start())
             yield Timer(CLK_PERIOD * 10)
             dut.reset = 0
@@ -271,6 +272,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
                 yield RisingEdge(dut.clk)
 
         t_end = get_sim_time()
+        dut.TB_monitor_power = 0
 
         dut._log.info(f'{{t_start}}, {{t_end}}')
         with open('vcs_power_Tile_PE.tcl', 'w') as f:
@@ -436,7 +438,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     tb.body += parse_ast(f"""
     # reset
     dut.reset = 1
-    cocotb.fork(Clock(dut.clk, CLK_PERIOD).start())
+    cocotb.fork(Clock(dut.clk, CLK_PERIOD, 'ps').start())
     yield(Timer(CLK_PERIOD * 10))
     dut.reset = 0
 
@@ -447,7 +449,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     yield gc.write(INTERRUPT_ENABLE_REG, 0b11)
 
     dut._log.info("Configuring CGRA...")
-    for command in gc_config_bitstream("{cwd}/{args.app_root}/{args.app}/bin/{app_name}.bs"):
+    for command in gc_config_bitstream("{cwd}/{args.app}/bin/{app_name}.bs"):
         yield gc.write(command.addr, command.data)
     dut._log.info("Done.")
     """).body
@@ -589,7 +591,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     num_streams = len(inputs) + len(outputs)
     for _in in inputs:
         tb.body += parse_ast(f"""
-        {_in['name']}_data = np.fromfile("{cwd}/{args.app_root}/{args.app}/{_in['file']}", dtype=np.uint8).astype(np.uint16)
+        {_in['name']}_data = np.fromfile("{cwd}/{args.app}/{_in['file']}", dtype=np.uint8).astype(np.uint16)
         # TODO: this should probably use WRITE_DATA instead and use the byte enables
         rounded_size = ((len({_in['name']}_data) + 4-1) // 4) * 4
         {_in['name']}_data.resize((rounded_size,))
@@ -606,7 +608,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
 
     for _out in outputs:
         tb.body += parse_ast(f"""
-        {_out['name']}_data = np.fromfile("{cwd}/{args.app_root}/{args.app}/{_out['file']}", dtype=np.uint8).astype(np.uint16)
+        {_out['name']}_data = np.fromfile("{cwd}/{args.app}/{_out['file']}", dtype=np.uint8).astype(np.uint16)
         """).body
         tb.body.append(process_output(_out))
 
@@ -621,7 +623,9 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
 
     tb.body += parse_ast("""
     t_start = get_sim_time()
+    dut.TB_monitor_power = 1
     dut._log.info("Starting application...")
+
     yield gc.write(STALL_REG, 0)
     yield gc.write(CGRA_START_REG, 1)
     """).body
@@ -629,12 +633,12 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     for _in in inputs:
         if _in['trace']:
             tb.body.append(parse_ast(
-                f"cocotb.fork(log_valid_data(\"{cwd}/{args.app_root}/{args.app}/{_in['trace']}\", in_valid[{_in['location']}], in_data[{_in['location']}]))"
+                f"cocotb.fork(log_valid_data(\"{cwd}/{args.app}/{_in['trace']}\", in_valid[{_in['location']}], in_data[{_in['location']}]))"
             ))
     for _out in outputs:
         if _out['trace']:
             tb.body.append(parse_ast(
-                f"cocotb.fork(log_valid_data(\"{cwd}/{args.app_root}/{args.app}/{_out['trace']}\", out_valid[{_out['location']}], out_data[{_out['location']}]))"
+                f"cocotb.fork(log_valid_data(\"{cwd}/{args.app}/{_out['trace']}\", out_valid[{_out['location']}], out_data[{_out['location']}]))"
             ))
 
 
@@ -645,6 +649,7 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     dut._log.info("Done.")
 
     t_end = get_sim_time()
+    dut.TB_monitor_power = 0
 
     dut._log.info(f"{t_init}, {t_start}, {t_end}")
     with open("vcs_power_top.tcl", "w") as f:
@@ -671,8 +676,8 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
     raise TestSuccess()
     """).body
 
-    os.makedirs(f"{args.app_root}/{args.app}/test", exist_ok=True)
-    with open(f"{args.app_root}/{args.app}/test/tb.py", "w") as f:
+    os.makedirs(f"{args.app}/test", exist_ok=True)
+    with open(f"{args.app}/test/tb.py", "w") as f:
         scope.body.append(tb)
         f.write(astor.to_source(scope))
 
@@ -706,8 +711,8 @@ with open(f"{args.app_root}/{args.app}/bin/global_buffer.json", "r") as f:
                 return list(map(int, row[:-1]))
 
     def validate(i):
-        data = np.fromfile(f"{args.app_root}/{args.app}/{i['file']}", dtype=np.uint8)
-        trace = np.array(read_csv(f"{args.app_root}/{args.app}/{i['trace']}"), dtype=np.uint8)
+        data = np.fromfile(f"{args.app}/{i['file']}", dtype=np.uint8)
+        trace = np.array(read_csv(f"{args.app}/{i['trace']}"), dtype=np.uint8)
         gold = [data[k] for k in index(i['dims'])]
 
         print(f"Validating {i['name']}...")
