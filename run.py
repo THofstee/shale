@@ -10,6 +10,7 @@ from util.generate_bitstreams import generate_bitstreams as gen_bitstreams
 
 parser = argparse.ArgumentParser()
 parser.add_argument("apps", nargs="*")
+parser.add_argument("--dry-run", action="store_true")
 parser.add_argument("--width", type=int, default=32)
 parser.add_argument("--height", type=int, default=16)
 parser.add_argument("--force", action="store_true")
@@ -27,8 +28,12 @@ parser.add_argument('-d', '--debug',
                     action="store_const", const=logging.DEBUG, default=logging.WARNING)
 
 args = parser.parse_args()
+args.apps = list(map(Path, args.apps))
 
-logging.basicConfig(level=min(args.verbose, args.debug))
+if args.dry_run:
+    logging.basicConfig(level=logging.INFO)
+else:
+    logging.basicConfig(level=min(args.verbose, args.debug))
 
 cwd = os.getcwd()
 git_up_to_date = re.compile(r"Already up-to-date.")
@@ -37,6 +42,10 @@ if len(args.apps) == 0:
     args.apps = gather_apps(args.app_root)
 
 def generate_garnet():
+    if args.dry_run:
+        logging.info("Generating garnet...")
+        return
+
     subprocess.run(
         [
             "git",
@@ -96,6 +105,10 @@ def generate_garnet():
         os.symlink(f"{cwd}/deps/garnet/garnet.v", garnet_sv)
 
 def generate_makefile():
+    if args.dry_run:
+        logging.info("Generating Makefile...")
+        return
+
     with open("extras/Makefile", "w") as f:
         f.write(f"""
 VERILOG_SOURCES ?= \\
@@ -161,37 +174,42 @@ include $(shell cocotb-config --makefiles)/Makefile.sim
 
 
 def generate_bitstreams():
-    subprocess.run(
-        [
-            "git",
-            "checkout",
-            "master",
-        ],
-        cwd="deps/garnet",
-        stdout=subprocess.PIPE,
-        text=True,
-    )
+    if not args.dry_run:
+        subprocess.run(
+            [
+                "git",
+                "checkout",
+                "master",
+            ],
+            cwd="deps/garnet",
+            stdout=subprocess.PIPE,
+            text=True,
+        )
 
-    p = subprocess.run(
-        [
-            "git",
-            "pull",
-        ],
-        cwd="deps/garnet",
-        stdout=subprocess.PIPE,
-        text=True,
-    )
+        p = subprocess.run(
+            [
+                "git",
+                "pull",
+            ],
+            cwd="deps/garnet",
+            stdout=subprocess.PIPE,
+            text=True,
+        )
 
-    if p.returncode:
-        logging.warn("Couldn't fetch latest updates.")
-    else:
-        if not git_up_to_date.search(p.stdout):
-            args.force = True
+        if p.returncode:
+            logging.warn("Couldn't fetch latest updates.")
+        else:
+            if not git_up_to_date.search(p.stdout):
+                args.force = True
 
     gen_bitstreams(args)
 
 def generate_testbenches(apps):
     for app in apps:
+        if args.dry_run:
+            logging.info(f"Generating testbench for {app}...")
+            continue
+
         os.makedirs(f"{app}/test", exist_ok=True)
         
         subprocess.run(
@@ -278,15 +296,16 @@ else:
     generate_bitstreams()
     generate_testbenches(args.apps)
 
-    # We want garnet to be on the flow branch for running testbenches
-    # because of the extra Verilog stubs
-    subprocess.run(
-        [
-            "git",
-            "checkout",
-            "flow",
-        ],
-        cwd="deps/garnet",
-        stdout=subprocess.PIPE,
-        text=True,
-    )
+    if not args.dry_run:
+        # We want garnet to be on the flow branch for running testbenches
+        # because of the extra Verilog stubs
+        subprocess.run(
+            [
+                "git",
+                "checkout",
+                "flow",
+            ],
+            cwd="deps/garnet",
+            stdout=subprocess.PIPE,
+            text=True,
+        )
