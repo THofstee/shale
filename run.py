@@ -199,7 +199,7 @@ def generate_bitstreams():
 
 def generate_testbenches(apps):
     for app in apps:
-        os.makedirs(f"{args.app_root}/{app}/test", exist_ok=True)
+        os.makedirs(f"{app}/test", exist_ok=True)
         
         subprocess.run(
             [
@@ -210,11 +210,11 @@ def generate_testbenches(apps):
             ],
         )
 
-        if os.path.islink(f"{args.app_root}/{app}/test/Makefile"):
-            os.remove(f"{args.app_root}/{app}/test/Makefile")
+        if os.path.islink(f"{app}/test/Makefile"):
+            os.remove(f"{app}/test/Makefile")
 
-        if not os.path.exists(f"{args.app_root}/{app}/test/Makefile"):
-            os.symlink(f"{cwd}/extras/Makefile", f"{args.app_root}/{app}/test/Makefile")
+        if not os.path.exists(f"{app}/test/Makefile"):
+            os.symlink(f"{cwd}/extras/Makefile", f"{app}/test/Makefile")
 
 
 if args.garnet_flow:
@@ -249,8 +249,8 @@ if args.garnet_flow:
     # Run testbenches
     for app in args.apps:
         # Symlink the GarnetFlow-generated bitstream
-        if not os.path.exists(f"{args.app_root}/{app}/bin/{app}.bs"):
-            os.symlink(f"/tmp/{app}.bs", f"{args.app_root}/{app}/bin/{app}.bs")
+        if not os.path.exists(f"{app}/bin/{app}.bs"):
+            os.symlink(f"/tmp/{app}.bs", f"{app}/bin/{app}.bs")
 
         # Create testbench
         subprocess.run(
@@ -263,11 +263,11 @@ if args.garnet_flow:
             ],
         )
 
-        if os.path.islink(f"{args.app_root}/{app}/test/Makefile"):
-            os.remove(f"{args.app_root}/{app}/test/Makefile")
+        if os.path.islink(f"{app}/test/Makefile"):
+            os.remove(f"{app}/test/Makefile")
 
-        if not os.path.exists(f"{args.app_root}/{app}/test/Makefile"):
-            os.symlink(f"{cwd}/extras/Makefile", f"{args.app_root}/{app}/test/Makefile")
+        if not os.path.exists(f"{app}/test/Makefile"):
+            os.symlink(f"{cwd}/extras/Makefile", f"{app}/test/Makefile")
 
         # Run top-level testbench
         p = subprocess.run(
@@ -275,7 +275,7 @@ if args.garnet_flow:
                 "make",
                 "SIM=vcs",
             ],
-            cwd=f"{args.app_root}/{app}/test",
+            cwd=f"{app}/test",
         )
 
         # Verify outputs
