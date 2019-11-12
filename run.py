@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from pathlib import Path
 import re
@@ -17,7 +18,16 @@ parser.add_argument("--app-root", type=str, default="apps",
 parser.add_argument("--power", action="store_true",
                     help="Use this flag if you are using this flow for generating power numbers")
 parser.add_argument("--garnet-flow", action="store_true")
+
+# Logging
+parser.add_argument('-v', '--verbose',
+                    action="store_const", const=logging.INFO, default=logging.WARNING)
+parser.add_argument('-d', '--debug',
+                    action="store_const", const=logging.DEBUG, default=logging.WARNING)
+
 args = parser.parse_args()
+
+logging.basicConfig(level=min(args.verbose, args.debug))
 
 cwd = os.getcwd()
 git_up_to_date = re.compile(r"Already up-to-date.")

@@ -1,5 +1,6 @@
 import argparse
 import csv
+import logging
 import os
 from pathlib import Path
 import re
@@ -89,6 +90,8 @@ else:
             name = entry.parts[-1]
 
             if should_run_app(entry, args):
+                logging.info(f"Generating bitstream for {entry}")
+
                 # create mapped.json
                 p = subprocess.run(
                     [
