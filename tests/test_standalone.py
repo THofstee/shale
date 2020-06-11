@@ -57,7 +57,7 @@ async def monitor_csv(inst, ports, filename=None):
             step = {}
             for port in ports:
                 try:
-                    step[port] = int(inst.port)
+                    step[port] = int(getattr(inst, port))
                 except:
                     step[port] = 0
             w.writerow(step)
