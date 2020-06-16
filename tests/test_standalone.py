@@ -86,6 +86,7 @@ async def test_app(dut):
     dut.GC_AWADDR = 0
     dut.GC_WDATA = 0
     dut.GC_WSTRB = 0
+    dut.TB_monitor_power = 0
     await Timer(CLK_PERIOD * 10, 'ns')
     dut.JTAG_TRSTn = 0
     dut.reset = 1
@@ -248,6 +249,7 @@ async def test_app(dut):
     await gc.write(gc_cfg_addr(rdl['glc.strm_f2g_ier']), 0b100)
 
     dut._log.info("Running application")
+    dut.TB_monitor_power = 1
 
     # execute app
     await gc.write(gb_cfg_addr(rdl['glb.tile_ctrl'], controller=0x1F),
@@ -259,6 +261,7 @@ async def test_app(dut):
     # wait for completion
     await with_timeout(RisingEdge(dut.GC_interrupt), 50000, 'ns')
 
+    dut.TB_monitor_power = 0
     dut._log.info("Verifying output")
 
     # verify results
